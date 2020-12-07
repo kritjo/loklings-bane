@@ -23,7 +23,6 @@ class OP:
 
     def readExcel(self, filinfo):
         filbane = filinfo["filbane"]
-        arknavn = filinfo["arknavn"]
         pd_df_excel = pd.read_excel(filbane)
         return pd_df_excel
 

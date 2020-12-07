@@ -1,0 +1,3 @@
+telenor_merke=33
+telia_merke=121
+ice_merke=1030

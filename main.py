@@ -3,7 +3,7 @@ from easygui import *
 import pandas as pd
 import logging
 import os
-import tkinter as tk
+from gui import Gui
 
 """
 Komma 400,0 = 4000
@@ -13,12 +13,13 @@ Id-tyveriforsikring har ikke gsmnr
 production = True
 
 def main():
-    vindu = tk.Tk()
-    vindu.title("Løklings Bane")
-    vindu.state("zoomed")
-    velkommen = tk.Label(text="Løkling Bane - et provisjonskontrollprogram\nAv kritjo@uio\nLisens: CC-BY-SA-4.0")
-    velkommen.pack()
-    vindu.mainloop()
+
+
+
+    gui = Gui()
+    gui.start()
+
+
 
     tittel = ""
     start = True
