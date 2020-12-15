@@ -10,7 +10,7 @@ Komma 400,0 = 4000
 Id-tyveriforsikring har ikke gsmnr
 """
 
-production = True
+production = False
 
 def main():
 
@@ -172,24 +172,6 @@ OBS: Pass på mellomrom""", tittel, ["GSM", "Beløp", "Årsak (deskriptiv beskri
         df = pd.read_csv("_temp.csv", sep=";", encoding='latin-1')
         df.to_excel(lagrenavn)
         start = ynbox("Vil du kjøre en ny kontroll?", tittel)
-
-    # ki = Kontrollinstans()
-    # df = ki.lagDFFraOP({"filbane":"telia.xls", "arknavn":"Commission details", "filtype":"excel"})
-    # dfDict = {"filtype":"excel", "cid_gsm":"Gsmnr", "cid_prov":"Beløp", "cid_årsak":"Beskrivelse",
-    #          "droprows":False, "endreGsm":True}
-    # ki.lagKundeKontoer("telia", df, dfDict)
-    # df = ki.lagDFFraOP({"filbane":"telenor.html", "filtype":"html"})
-    # dfDict = {"filtype": "html", "id_tabell": 7, "cid_gsm": "Anropsnr", "cid_prov": "Utbetalt provisjon",
-    #          "cid_årsak": "Produkt"}
-    # ki.lagKundeKontoer("telenor", df, dfDict)
-    # df = ki.lagDFFraOP({"filbane": "ice.xlsm", "arknavn": "10197", "filtype": "excel"})
-    # dfDict = {"filtype":"excel", "cid_gsm":" Subscription No", "cid_prov":"Utbetaling", "cid_årsak":" Item Name",
-    #          "droprows":True, "drops":0, "dropn":2, "headers":3, "endreGsm":False}
-    # print(df)
-    # ki.lagKundeKontoer("ice", df, dfDict)
-    # ki.lagKundeKontoer("elguide", "irank.csv", {"gsm":19, "prov":10, "årsak":4})
-    # print(ki._kundekontoer[0]._forventetprov[0]._årsak)
-    # print(ki.gjørKontroll())
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))

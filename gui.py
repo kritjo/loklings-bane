@@ -16,6 +16,8 @@ class Gui:
         self._opFil = None
         self._opFil2 = None
         self._opfilType = None
+        self._colTest = None
+        self._dfOp = None
         self._ki = Kontrollinstans()
 
     def start(self):
@@ -97,7 +99,7 @@ class Gui:
                     eginfo["merke_id"] = int(biter[1])
                 elif biter[0] == "telenor_merke" and self._op == "telenor":
                     eginfo["merke_id"] = int(biter[1])
-                if biter[0] == "telia_merke" and self._op == "telia":
+                elif biter[0] == "telia_merke" and self._op == "telia":
                     eginfo["merke_id"] = int(biter[1])
 
 
@@ -140,9 +142,151 @@ class Gui:
         okKnapp.pack()
         opfilFrame.pack()
 
+        def opdfframekill():
+            self._colTest = colNavnSjekk.get()
+            try:
+                self._colTest = int(self._colTest)
+                opdfFrame.destroy()
+                if self._colTest == -1:
+                    dropRows = False
+                else:
+                    dropRows = True
+                    drops = 0
+                    dropn = self._colTest - 1
+                    headers = self._colTest
+
+                if dropRows:
+                    try:
+                        self._dfOp = self._dfOp.rename(columns=self._dfOp.iloc[headers])
+                        self._dfOp = self._dfOp.drop(self._dfOp.index[headers])
+                    except KeyError:
+                        pass
+                    rowstodrop = [row for row in range(drops, dropn + 1)]
+                    self._dfOp = self._dfOp.drop(index=rowstodrop)
+
+                kolonnenavn = self._dfOp.columns.tolist()
+                for i in range(len(kolonnenavn)):
+                    kolonnenavn[i] = str(kolonnenavn[i]) + str(i)
+
+                self._dfOp.columns = kolonnenavn
+
+            except ValueError:
+                raise Exception("RADNUMMER MÅ VÆRE ET TALL!")
+
+        opdfFrame = tk.Frame(self._vindu)
+        opdfFrame.wait_window(opfilFrame)
+        opInfoDict = {"filbane": self._opFil, "filtype": self._opfilType}
+        self._dfOp = self._ki.lagDFFraOP(opInfoDict)
+        tk.Label(opdfFrame, text="Slik ser filen ut:").pack()
         if self._opfilType == "excel":
-            opInfoDict = {"filbane": self._opFil, "filtype": self._opfilType}
-            dfOp = self._ki.lagDFFraOP(opInfoDict)
+
+            visningContainer = tk.Frame(opdfFrame)
+            visningCanvas = tk.Canvas(visningContainer)
+            scroll = tk.Scrollbar(visningContainer, orient="vertical", command=visningCanvas.yview)
+            scrollx = tk.Scrollbar(visningContainer, orient="horizontal", command=visningCanvas.xview)
+            scrollFrame = tk.Frame(visningCanvas)
+            scrollFrame.bind(
+                "<Configure>",
+                lambda e: visningCanvas.configure(
+                    scrollregion=visningCanvas.bbox("all")
+                )
+            )
+            visningCanvas.create_window((0, 0), window=scrollFrame, anchor="nw")
+            visningCanvas.configure(yscrollcommand=scroll.set)
+            visningCanvas.configure(xscrollcommand=scrollx.set)
+
+            tk.Label(scrollFrame, text=f"{self._dfOp.to_string()}").pack()
+            visningContainer.pack()
+            visningCanvas.pack(side="left", fill="both", expand=True)
+            scroll.pack(side="right", fill="y")
+            scrollx.pack(side="bottom", fill="x")
+
+            tk.Label(opdfFrame, text="Skriv inn radnummer som inneholder kolonnetitler, hvis riktig as-is skriv -1").pack()
+            colNavnSjekk = tk.Entry(opdfFrame, text="Radnummer / -1")
+            colNavnSjekk.pack()
+            kolonneOK = tk.Button(opdfFrame, text="OK", command=opdfframekill)
+            kolonneOK.pack()
+            opdfFrame.pack()
+
+            kolDict = {}
+
+            def listselectOp(event):
+                name = str(event.widget).split(".")[-1]
+                selection = event.widget.curselection()
+                valueOp = event.widget.get(selection[0])
+                idx = int(selection[0])
+                print(f"{name}|{valueOp}|{idx}")
+                nameconv = {
+                    "gsm": "cid_gsm",
+                    "beløp": "cid_prov",
+                    "aarsak": "cid_årsak",
+                    "bilag": "cid_bilag"
+                }
+                kolDict[nameconv[name]] = valueOp
+
+            opInfoFrame = tk.Frame(self._vindu)
+            opInfoFrame.wait_window(opdfFrame)
+            colopnavn = list(self._dfOp)
+            for i in ["GSM", "Beløp", "Aarsak", "Bilag"]:
+                comFrame = tk.Frame(opInfoFrame)
+                comTitle = tk.Label(comFrame, text=f"Velg kolonnenavn for {i}:")
+                comTitle.pack()
+                liste = tk.Listbox(comFrame, exportselection=0, name=i.lower())
+                for i in range(len(colopnavn)):
+                    liste.insert(i, colopnavn[i])
+                liste.bind("<<ListboxSelect>>", listselectOp)
+                liste.pack()
+                comFrame.pack(side="left")
+            opInfoFrame.pack()
+
+            def opInfoKill():
+                opInfoFrame.destroy()
+
+            ferdig = tk.Button(opInfoFrame, command=opInfoKill, text="OK")
+            ferdig.pack(side="bottom")
+
+            def rm47a():
+                def rm47(x):
+                    return int(str(x)[2:])
+
+                self._dfOp[kolDict["cid_gsm"]] = self._dfOp[kolDict["cid_gsm"]].apply(rm47)
+                rm47Frame.destroy()
+
+            def kill47():
+                rm47Frame.destroy()
+
+            rm47Frame = tk.Frame(self._vindu)
+            rm47Frame.wait_window(opInfoFrame)
+            tk.Label(rm47Frame, text="Inneholder GSM-nr 47 forran?").pack()
+            rmYes = tk.Button(rm47Frame, text="JA", command=rm47a)
+            rmNo = tk.Button(rm47Frame, text="NEI", command=kill47)
+            rmYes.pack()
+            rmNo.pack()
+            rm47Frame.pack()
+
+            def mvaJa():
+                kolDict["mvatopp"] = True
+                mvaFrame.destroy()
+
+            def mvaNei():
+                kolDict["mvatopp"] = False
+                mvaFrame.destroy()
+
+            mvaFrame = tk.Frame(self._vindu)
+            mvaFrame.wait_window(rm47Frame)
+            tk.Label(mvaFrame, text="MVA på topp av tabell?").pack()
+            mvaYes = tk.Button(mvaFrame, text="JA", command=mvaJa)
+            mvaNo = tk.Button(mvaFrame, text="NEI", command=mvaNei)
+            mvaYes.pack()
+            mvaNo.pack()
+            mvaFrame.pack()
+
+            waitFrame = tk.Frame(self._vindu)
+            waitFrame.wait_window(mvaFrame)
+            kolDict["filtype"] = self._opfilType
+            self._ki.lagKundeKontoer(self._op, self._dfOp, kolDict)
+
+
 
 
 
