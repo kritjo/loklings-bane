@@ -3,12 +3,15 @@ from tkinter.filedialog import askopenfilename
 from kontrollinstans import Kontrollinstans
 import pandas as pd
 
+
 class Gui:
     def __init__(self):
         self._vindu = tk.Tk()
         self._vindu.title("Løklings Bane")
         self._vindu.state("zoomed")
-        velkommen = tk.Label(self._vindu, text="Løkling Bane - et provisjonskontrollprogram\nAv kritjo@uio\nLisens: CC-BY-SA-4.0")
+        self._vindu.geometry("1920x1080")
+        velkommen = tk.Label(self._vindu,
+                             text="Løkling Bane - et provisjonskontrollprogram\nAv kritjo@uio\nLisens: CC-BY-SA-4.0")
         velkommen.pack()
         self._focus = None
         self._op = None
@@ -18,7 +21,9 @@ class Gui:
         self._opfilType = None
         self._colTest = None
         self._dfOp = None
+        self._dfOp2 = None
         self._ki = Kontrollinstans()
+        self._avviksfil = None
 
     def start(self):
 
@@ -58,6 +63,7 @@ class Gui:
         filFrame.pack()
 
         eginfo = {}
+
         def listselect(event):
             name = str(event.widget).split(".")[-1]
             selection = event.widget.curselection()
@@ -102,9 +108,10 @@ class Gui:
                 elif biter[0] == "telia_merke" and self._op == "telia":
                     eginfo["merke_id"] = int(biter[1])
 
-
         def click():
             egInfoFrame.destroy()
+            self._ki.lagKundeKontoer("elguide", self._elguideFil, eginfo)
+
         ferdig = tk.Button(egInfoFrame, command=click, text="OK")
         ferdig.pack(side="bottom")
 
@@ -177,9 +184,11 @@ class Gui:
         opdfFrame.wait_window(opfilFrame)
         opInfoDict = {"filbane": self._opFil, "filtype": self._opfilType}
         self._dfOp = self._ki.lagDFFraOP(opInfoDict)
+        if self._opFil2 is not None:
+            opInfoDict = {"filbane": self._opFil2, "filtype": self._opfilType}
+            self._dfOp2 = self._ki.lagDFFraOP(opInfoDict)
         tk.Label(opdfFrame, text="Slik ser filen ut:").pack()
         if self._opfilType == "excel":
-
             visningContainer = tk.Frame(opdfFrame)
             visningCanvas = tk.Canvas(visningContainer)
             scroll = tk.Scrollbar(visningContainer, orient="vertical", command=visningCanvas.yview)
@@ -201,7 +210,8 @@ class Gui:
             scroll.pack(side="right", fill="y")
             scrollx.pack(side="bottom", fill="x")
 
-            tk.Label(opdfFrame, text="Skriv inn radnummer som inneholder kolonnetitler, hvis riktig as-is skriv -1").pack()
+            tk.Label(opdfFrame,
+                     text="Skriv inn radnummer som inneholder kolonnetitler, hvis riktig as-is skriv -1").pack()
             colNavnSjekk = tk.Entry(opdfFrame, text="Radnummer / -1")
             colNavnSjekk.pack()
             kolonneOK = tk.Button(opdfFrame, text="OK", command=opdfframekill)
@@ -223,6 +233,23 @@ class Gui:
                     "bilag": "cid_bilag"
                 }
                 kolDict[nameconv[name]] = valueOp
+                if name == "gsm":
+                    gsmLabelVar.set(f"GSM: {self._dfOp[valueOp].iloc[0]}")
+                elif name == "beløp":
+                    belopLabelVar.set(f"BELØP: {self._dfOp[valueOp].iloc[0]}")
+                elif name == "aarsak":
+                    aarsakLabelVar.set(f"ÅRSAK: {self._dfOp[valueOp].iloc[0]}")
+                elif name == "bilag":
+                    bilagLabelVar.set(f"BILAG: {self._dfOp[valueOp].iloc[0]}")
+
+            gsmLabelVar = tk.StringVar()
+            gsmLabelVar.set("GSM")
+            belopLabelVar = tk.StringVar()
+            belopLabelVar.set("BELØP")
+            aarsakLabelVar = tk.StringVar()
+            aarsakLabelVar.set("ÅRSAK")
+            bilagLabelVar = tk.StringVar()
+            bilagLabelVar.set("BILAG")
 
             opInfoFrame = tk.Frame(self._vindu)
             opInfoFrame.wait_window(opdfFrame)
@@ -237,6 +264,15 @@ class Gui:
                 liste.bind("<<ListboxSelect>>", listselectOp)
                 liste.pack()
                 comFrame.pack(side="left")
+            tk.Label(opInfoFrame, text="Første linje i valgt kolonne:").pack()
+            gsmLabel = tk.Entry(opInfoFrame, textvariable=gsmLabelVar, state="disabled")
+            gsmLabel.pack()
+            belopLabel = tk.Entry(opInfoFrame, textvariable=belopLabelVar, state="disabled")
+            belopLabel.pack()
+            aarsakLabel = tk.Entry(opInfoFrame, textvariable=aarsakLabelVar, state="disabled")
+            aarsakLabel.pack()
+            bilagLabel = tk.Entry(opInfoFrame, textvariable=bilagLabelVar, state="disabled")
+            bilagLabel.pack()
             opInfoFrame.pack()
 
             def opInfoKill():
@@ -281,23 +317,182 @@ class Gui:
             mvaNo.pack()
             mvaFrame.pack()
 
-            waitFrame = tk.Frame(self._vindu)
-            waitFrame.wait_window(mvaFrame)
+            waitframe = tk.Frame(self._vindu)
+            waitframe.wait_window(mvaFrame)
             kolDict["filtype"] = self._opfilType
             self._ki.lagKundeKontoer(self._op, self._dfOp, kolDict)
+            waitframe.pack()
+            waitframe.destroy()
 
 
+        elif self._opfilType == "html":
+            tk.Label(opdfFrame, text="Velg tabeller som skal sjekkes for provisjon og trykk OK når ferdig.").pack()
+            htmlContainer = tk.Frame(opdfFrame)
+            htmlCanvas = tk.Canvas(htmlContainer)
+            htmlscrollbar = tk.Scrollbar(htmlContainer, orient="vertical", command=htmlCanvas.yview)
+            htmlscrollFrame = tk.Frame(htmlCanvas)
 
+            htmlscrollFrame.bind(
+                "<Configure>",
+                lambda e: htmlCanvas.configure(
+                    scrollregion=htmlCanvas.bbox("all")
+                )
+            )
+            htmlCanvas.create_window((0, 0), window=htmlscrollFrame, anchor="nw")
+            htmlCanvas.configure(yscrollcommand=htmlscrollbar.set)
 
+            htmlTableSelected = [tk.IntVar() for i in range(len(self._dfOp))]
+            htmlMvaTable = [tk.IntVar() for i in range(len(self._dfOp))]
+            htmlTable2Selected = [tk.IntVar() for i in range(len(self._dfOp))]
+            htmlMvaTable2 = [tk.IntVar() for i in range(len(self._dfOp))]
+            tk.Label(htmlscrollFrame, text="\n\n-----------------------\n\n").pack()
+            for i in range(len(self._dfOp)):
+                htmlTable = tk.Label(htmlscrollFrame, text=f"{self._dfOp[i]}")
+                htmlTable.pack()
+                checkTable = tk.Checkbutton(htmlscrollFrame, text="Provisjonstabell?", variable=htmlTableSelected[i],
+                                            onvalue=1, offvalue=0)
+                checkTable.pack()
+                checkMva = tk.Checkbutton(htmlscrollFrame, text="MVA?", variable=htmlMvaTable[i],
+                                          onvalue=1, offvalue=0)
+                checkMva.pack()
+                tk.Label(htmlscrollFrame, text="\n\n-----------------------\n\n").pack()
 
+            for i in range(len(self._dfOp2)):
+                htmlTable = tk.Label(htmlscrollFrame, text=f"{self._dfOp2[i]}")
+                htmlTable.pack()
+                checkTable = tk.Checkbutton(htmlscrollFrame, text="Provisjonstabell?", variable=htmlTable2Selected[i],
+                                            onvalue=1, offvalue=0)
+                checkTable.pack()
+                checkMva = tk.Checkbutton(htmlscrollFrame, text="MVA?", variable=htmlMvaTable2[i],
+                                          onvalue=1, offvalue=0)
+                checkMva.pack()
+                tk.Label(htmlscrollFrame, text="\n\n-----------------------\n\n").pack()
 
+            htmlContainer.pack(fill=tk.BOTH, expand=True)
+            htmlCanvas.pack(side="left", fill=tk.BOTH, expand=True)
+            htmlscrollbar.pack(side="right", fill="y")
 
+            def killopdfFrame():
+                opdfFrame.destroy()
 
+            htmlok = tk.Button(opdfFrame, text="OK", command=killopdfFrame)
+            htmlok.pack()
+            opdfFrame.propagate(0)
+            opdfFrame.pack(fill=tk.BOTH, expand=True)
 
+            htmlcolParamFrame = tk.Frame()
+            htmlcolParamFrame.wait_window(opdfFrame)
 
+            for i in range(len(htmlTableSelected)):
+                if htmlTableSelected[i].get() == 1:
+                    riktightmltab = i
 
+            kolDict = {}
 
+            def listselectOp(event):
+                name = str(event.widget).split(".")[-1]
+                selection = event.widget.curselection()
+                valueOp = event.widget.get(selection[0])
+                idx = int(selection[0])
+                print(f"{name}|{valueOp}|{idx}")
+                nameconv = {
+                    "gsm": "cid_gsm",
+                    "beløp": "cid_prov",
+                    "aarsak": "cid_årsak",
+                    "bilag": "cid_bilag",
+                    "kundenavn": "cid_navn"
+                }
+                kolDict[nameconv[name]] = valueOp
+                if name == "gsm":
+                    gsmLabelVar.set(f"GSM: {self._dfOp[riktightmltab][valueOp].iloc[0]}")
+                elif name == "beløp":
+                    belopLabelVar.set(f"BELØP: {self._dfOp[riktightmltab][valueOp].iloc[0]}")
+                elif name == "aarsak":
+                    aarsakLabelVar.set(f"ÅRSAK: {self._dfOp[riktightmltab][valueOp].iloc[0]}")
+                elif name == "bilag":
+                    bilagLabelVar.set(f"BILAG: {self._dfOp[riktightmltab][valueOp].iloc[0]}")
+                elif name == "kundenavn":
+                    navnLabelVar.set(f"KUNDENAVN: {self._dfOp[riktightmltab][valueOp].iloc[0]}")
 
+            gsmLabelVar = tk.StringVar()
+            gsmLabelVar.set("GSM")
+            belopLabelVar = tk.StringVar()
+            belopLabelVar.set("BELØP")
+            aarsakLabelVar = tk.StringVar()
+            aarsakLabelVar.set("ÅRSAK")
+            bilagLabelVar = tk.StringVar()
+            bilagLabelVar.set("BILAG")
+            navnLabelVar = tk.StringVar()
+            navnLabelVar.set("NAVN")
 
+            def htmlcolparamkill():
+                htmlcolParamFrame.destroy()
 
+            colopnavn = list(self._dfOp[riktightmltab])
+            for i in ["GSM", "Beløp", "Aarsak", "Bilag", "Kundenavn"]:
+                comFrame = tk.Frame(htmlcolParamFrame)
+                comTitle = tk.Label(comFrame, text=f"Velg kolonnenavn for {i}:")
+                comTitle.pack()
+                liste = tk.Listbox(comFrame, exportselection=0, name=i.lower())
+                for i in range(len(colopnavn)):
+                    liste.insert(i, colopnavn[i])
+                liste.bind("<<ListboxSelect>>", listselectOp)
+                liste.pack()
+                comFrame.pack(side="left")
+            tk.Label(htmlcolParamFrame, text="Første linje i valgt kolonne:").pack()
+            gsmLabel = tk.Entry(htmlcolParamFrame, textvariable=gsmLabelVar, state="disabled")
+            gsmLabel.pack()
+            belopLabel = tk.Entry(htmlcolParamFrame, textvariable=belopLabelVar, state="disabled")
+            belopLabel.pack()
+            aarsakLabel = tk.Entry(htmlcolParamFrame, textvariable=aarsakLabelVar, state="disabled")
+            aarsakLabel.pack()
+            bilagLabel = tk.Entry(htmlcolParamFrame, textvariable=bilagLabelVar, state="disabled")
+            bilagLabel.pack()
+            navnLabel = tk.Entry(htmlcolParamFrame, textvariable=navnLabelVar, state="disabled")
+            navnLabel.pack()
+            okcolparam = tk.Button(htmlcolParamFrame, text="OK", command=htmlcolparamkill)
+            okcolparam.pack()
+            htmlcolParamFrame.pack()
+
+            waitframe = tk.Frame()
+            waitframe.wait_window(htmlcolParamFrame)
+            for i in range(len(htmlTableSelected)):
+                if htmlTableSelected[i].get() == 1:
+                    kolDict["mvatopp"] = htmlMvaTable[i].get()
+                    kolDict["filtype"] = "html"
+                    kolDict["id_tabell"] = i
+                    self._ki.lagKundeKontoer(self._op, self._dfOp, kolDict)
+            if self._dfOp2 is not None:
+                for i in range(len(htmlTable2Selected)):
+                    if htmlTable2Selected[i].get() == 1:
+                        kolDict["mvatopp"] = htmlMvaTable2[i].get()
+                        kolDict["filtype"] = "html"
+                        kolDict["id_tabell"] = i
+                        self._ki.lagKundeKontoer(self._op, self._dfOp2, kolDict)
+            waitframe.pack()
+            waitframe.destroy()
+
+        avviksframe = tk.Frame(self._vindu)
+        def lagresom():
+            self._avviksfil = tk.filedialog.asksaveasfile(multiple=False, filetypes=[("Excel", "*.xlsx")])
+            avviksframe.destroy()
+        kontrolliste = self._ki.gjørKontroll()
+        tk.Label(avviksframe, text="Lagre avviksfil: ").pack()
+        lagreSomKnapp = tk.Button(avviksframe, text="Lagre som..", command=lagresom)
+        lagreSomKnapp.pack()
+        avviksframe.pack()
+
+        finalwait = tk.Frame(self._vindu)
+        finalwait.wait_window(avviksframe)
+        with open("_temp.csv", "w") as dfil:
+            dfil.writelines(["GSM;PROV;ÅRSAK;BILAG;TYPE\n"])
+            for kunde in kontrolliste:
+                for provobj in kunde._forventetprov:
+                    dfil.writelines([f"{provobj._gsm};{provobj._prov};{provobj._årsak};{provobj._id};Forventet\n"])
+                for provobj in kunde._faktiskprov:
+                    dfil.writelines([f"{provobj._gsm};{provobj._prov};{provobj._årsak};{provobj._id};Faktisk\n"])
+        df = pd.read_csv("_temp.csv", sep=";", encoding='latin-1')
+        df.to_excel(self._avviksfil)
+        tk.Label(finalwait, text="Kontroll utført. Du kan trygt lukke vinduet.").pack()
+        finalwait.pack()
 
