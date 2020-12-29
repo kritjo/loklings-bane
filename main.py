@@ -1,12 +1,10 @@
-from kontrollinstans import Kontrollinstans
 from easygui import *
-import pandas as pd
 import logging
 import os
 from gui import Gui
 
 
-production = False
+production = True
 
 
 def main():

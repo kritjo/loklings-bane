@@ -472,10 +472,12 @@ class Gui:
             waitframe.pack()
             waitframe.destroy()
 
-        avviksframe = tk.Frame(self._vindu)
         def lagresom():
-            self._avviksfil = tk.filedialog.asksaveasfile(multiple=False, filetypes=[("Excel", "*.xlsx")])
+            self._avviksfil = tk.filedialog.asksaveasfilename(title="Lagre avviksfil som...", initialfile="avviksliste.xlsx",
+                                                              filetypes=[("Excel", "*.xlsx")])
             avviksframe.destroy()
+
+        avviksframe = tk.Frame(self._vindu)
         kontrolliste = self._ki.gjørKontroll()
         tk.Label(avviksframe, text="Lagre avviksfil: ").pack()
         lagreSomKnapp = tk.Button(avviksframe, text="Lagre som..", command=lagresom)
@@ -495,4 +497,4 @@ class Gui:
         df.to_excel(self._avviksfil)
         tk.Label(finalwait, text="Kontroll utført. Du kan trygt lukke vinduet.").pack()
         finalwait.pack()
-
+        self._vindu.mainloop()
