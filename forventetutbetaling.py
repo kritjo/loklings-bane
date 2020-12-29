@@ -25,7 +25,10 @@ class Forventetutbetaling:
             df = pd.read_csv(indata, sep=";", index_col=False, dtype=str)
             dfmerke = df.columns[merke_col]
             dfvkode = df.columns[varekode]
-            indexNames = df[df[dfmerke] != merke_id].index
+            indexNames = []
+            for i in range(df[dfmerke].size):
+                if int(df[dfmerke][i]) != merke_id:
+                    indexNames.append(i)
             df.drop(indexNames, inplace=True)
             unikeVarekoder = df[dfvkode].unique()
             betalesHK = multchoicebox("Velg koder som betales av HK", "Løkling Bane", unikeVarekoder)
@@ -33,7 +36,10 @@ class Forventetutbetaling:
             df = pd.read_csv(indata, sep=";", index_col=False, dtype=str, encoding='latin-1')
             dfmerke = df.columns[merke_col]
             dfvkode = df.columns[varekode]
-            indexNames = df[df[dfmerke] != merke_id].index
+            indexNames = []
+            for i in range(df[dfmerke].size):
+                if int(df[dfmerke][i]) != merke_id:
+                    indexNames.append(i)
             df.drop(indexNames, inplace=True)
             unikeVarekoder = df[dfvkode].unique()
             betalesHK = multchoicebox("Velg koder som betales av HK", "Løkling Bane", unikeVarekoder)
@@ -42,7 +48,7 @@ class Forventetutbetaling:
             linje = fil.readline().strip().split(";")
             for linje in fil:
                 biter = linje.strip().split(";")
-                if biter[merke_col] == merke_id:
+                if int(biter[merke_col]) == merke_id:
                     print(biter)
                     try:
                         if biter[varekode] in betalesHK:
