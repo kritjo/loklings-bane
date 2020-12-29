@@ -55,7 +55,6 @@ class Forventetutbetaling:
             for linje in fil:
                 biter = linje.strip().split(";")
                 if int(biter[merke_col]) == merke_id:
-                    print(biter)
                     try:
                         if biter[varekode] in betalesHK:
                             bbtalesHK = True

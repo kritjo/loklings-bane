@@ -86,8 +86,6 @@ class DF:
             for index, row in self._df[tabell].iterrows():
                 try:
                     gsm = int(row[gsmCol])
-                    if int(row[gsmCol]) == 90364001:
-                        print()
                     if mvatopp:
                         prov = int(row[provCol]) * 1.25
                     else:
