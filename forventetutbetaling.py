@@ -6,6 +6,12 @@ from kunde import Kunde
 import pandas as pd
 from easygui import *
 
+__author__ = "Kristian Tjelta Johansen"
+__copyright__ = "Copyright 2020, kritjo@uio"
+__license__ = "CC-BY-SA 4.0 Int"
+__version__ = "1.0"
+__status__ = "Alpha"
+
 
 class Forventetutbetaling:
     def __init__(self, indata, filinfo):

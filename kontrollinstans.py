@@ -10,8 +10,8 @@ from forventetutbetaling import Forventetutbetaling
 __author__ = "Kristian Tjelta Johansen"
 __copyright__ = "Copyright 2020, kritjo@uio"
 __license__ = "CC-BY-SA 4.0 Int"
-__version__ = "0.1"
-__status__ = "Prototype"
+__version__ = "1.0"
+__status__ = "Alpha"
 
 class Kontrollinstans:
     def __init__(self):
